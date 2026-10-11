@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instrument Studio</title>
+<style>
+  :root{
+    --bg:#0d1017; --panel:#151a24; --panel2:#1b2230; --line:#26303f;
+    --txt:#e8edf5; --muted:#8a97ab; --accent:#ff8a3d; --accent2:#37d3c4;
+    --key-white:#f4f6fa; --key-white2:#dfe5ee; --key-black:#12161d;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font:inherit;color:inherit}
+  .app{display:grid;grid-template-columns:250px 1fr 270px;grid-template-rows:auto 1fr;height:100vh}
+  header{
+    grid-column:1/4;display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:linear-gradient(180deg,#151b26,#11161f);border-bottom:1px solid var(--line);
+  }
+  header .logo{font-weight:700;letter-spacing:.3px;font-size:15px}
+  header .logo span{color:var(--accent)}
+  header .spacer{flex:1}
+  .btn{
+    background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:7px 12px;border-radius:8px;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn.on{background:var(--accent);border-color:var(--accent);color:#1a1005;font-weight:600}
+  .btn.rec.on{background:#ff4d5e;border-color:#ff4d5e;color:#fff}
+  .btn.ghost{background:transparent}
+  aside{overflow:auto;padding:12px}
+  .library{background:var(--panel);border-right:1px solid var(--line)}
+  .sarvam{background:var(--panel);border-left:1px solid var(--line)}
+  .stage{display:flex;flex-direction:column;overflow:hidden;padding:14px;gap:12px}
+  h4{margin:0 0 8px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+  input[type=text],input[type=password],select,textarea{
+    width:100%;background:#0e131c;border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent2)}
+  .search{margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{padding:4px 9px;border-radius:20px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:12px}
+  .chip.on{background:var(--accent2);border-color:var(--accent2);color:#04201d;font-weight:600}
+  .inst{display:block;width:100%;text-align:left;background:transparent;border:1px solid transparent;
+        color:var(--txt);padding:6px 9px;border-radius:7px;cursor:pointer;font-size:13px}
+  .inst:hover{background:var(--panel2)}
+  .inst.on{background:var(--panel2);border-color:var(--accent);color:#fff}
+  .inst small{color:var(--muted);display:block;font-size:11px}
+  .famhead{color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:12px 0 4px}
+  .nowbar{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+  .nowbar .name{font-size:17px;font-weight:600}
+  .nowbar .name small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+  .readout{font-variant-numeric:tabular-nums;color:var(--accent2);font-size:13px;min-width:120px}
+  #scope{flex:1;height:46px;min-width:120px;background:#0b0f16;border:1px solid var(--line);border-radius:8px}
+  .keyboard-wrap{position:relative;flex:1;min-height:170px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+  #keyboard{position:relative;height:100%;width:100%;touch-action:none;user-select:none}
+  .wkey{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,var(--key-white),var(--key-white2));
+        border:1px solid #b9c2d0;border-radius:0 0 7px 7px;cursor:pointer}
+  .wkey:hover{background:linear-gradient(180deg,#fff,#e9eef7)}
+  .wkey.down{background:linear-gradient(180deg,#ffd9bf,var(--accent));}
+  .bkey{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#2a313c,var(--key-black));
+        border:1px solid #000;border-radius:0 0 6px 6px;z-index:2;cursor:pointer}
+  .bkey:hover{background:linear-gradient(180deg,#3a4351,#1b212b)}
+  .bkey.down{background:linear-gradient(180deg,var(--accent),#c25a1c)}
+  .wkey .lbl{position:absolute;bottom:6px;left:0;right:0;text-align:center;color:#7b8798;font-size:11px;pointer-events:none}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+            background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .ctl label{display:block;font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+  .ctl .val{color:var(--accent2);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .hint{color:var(--muted);font-size:11.5px;line-height:1.5}
+  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+  .sarvam .field{margin-bottom:10px}
+  .status{font-size:11.5px;color:var(--muted);min-height:16px;word-break:break-word}
+  .status.err{color:#ff8a97}
+  .status.ok{color:var(--accent2)}
+  textarea{resize:vertical;min-height:64px}
+  .tracks-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .tracks-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .tracks-title{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+  .tracks-head .hint{flex:1;min-width:200px}
+  .tracks{display:flex;flex-wrap:wrap;gap:8px}
+  .track{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+  .track.muted{opacity:.45}
+  .tname{font-size:12.5px}
+  .tcount{font-size:11px;color:var(--muted);background:#0e131c;border-radius:10px;padding:1px 7px}
+  .tbtn{background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--muted);cursor:pointer;width:24px;height:22px;line-height:1;font-size:11px;padding:0}
+  .tbtn:hover{border-color:var(--accent);color:#fff}
+  .tbtn.on{background:var(--accent2);border-color:var(--accent2);color:#04201d;font-weight:700}
+  @media (max-width:1050px){
+    .app{grid-template-columns:1fr}
+    aside{max-height:230px}
+    .sarvam{border-left:none;border-top:1px solid var(--line)}
+    .library{border-right:none;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">Instrument<span>Studio</span></div>
+    <span class="pill" id="hdrInst">Grand Piano</span>
+    <div class="spacer"></div>
+    <div class="row">
+      <button class="btn rec" id="btnRec">&#9679; Record</button>
+      <button class="btn" id="btnPlay">&#9654; Play loop</button>
+      <button class="btn" id="btnStop">&#9632; Stop</button>
+      <button class="btn" id="btnExport">&#8681; WAV</button>
+      <span class="pill" id="countPill">0 notes</span>
+    </div>
+  </header>
+
+  <aside class="library">
+    <h4>Instruments</h4>
+    <input type="text" class="search" id="search" placeholder="Search instruments...">
+    <div class="chips" id="famChips"></div>
+    <div id="instList"></div>
+  </aside>
+
+  <section class="stage">
+    <div class="nowbar">
+      <div class="name" id="npName">Grand Piano<small id="npFam">Keys</small></div>
+      <div class="readout" id="readout">C4 &middot; 261.63 Hz</div>
+      <canvas id="scope"></canvas>
+    </div>
+
+    <div class="keyboard-wrap">
+      <div id="keyboard"></div>
+    </div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>Articulation</label>
+        <select id="articulation">
+          <option>Normal</option>
+          <option>Legato</option>
+          <option>Staccato</option>
+          <option>Tenuto</option>
+          <option>Marcato</option>
+          <option>Accent</option>
+          <option>Trill</option>
+          <option>Tremolo</option>
+          <option>Glissando</option>
+          <option>Portamento</option>
+          <option>Fermata</option>
+        </select>
+      </div>
+      <div class="ctl">
+        <label>Trill / tremolo rate <span class="val" id="vRate">7.0 Hz</span></label>
+        <input type="range" id="rate" min="2" max="16" step="0.5" value="7">
+      </div>
+      <div class="ctl">
+        <label>Trill interval <span class="val" id="vTrill">2 semitones</span></label>
+        <input type="range" id="trillInt" min="1" max="4" step="1" value="2">
+      </div>
+      <div class="ctl">
+        <label>Vibrato depth <span class="val" id="vVibD">14 cents</span></label>
+        <input type="range" id="vibD" min="0" max="60" step="1" value="14">
+      </div>
+      <div class="ctl">
+        <label>Vibrato rate <span class="val" id="vVibR">5.5 Hz</span></label>
+        <input type="range" id="vibR" min="3" max="9" step="0.1" value="5.5">
+      </div>
+      <div class="ctl">
+        <label>Octave <span class="val" id="vOct">0</span></label>
+        <div class="row">
+          <button class="btn ghost" id="octDown">&minus;</button>
+          <button class="btn ghost" id="octUp">+</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <label>Volume <span class="val" id="vVol">80%</span></label>
+        <input type="range" id="vol" min="0" max="100" step="1" value="80">
+      </div>
+      <div class="ctl">
+        <label>Reverb <span class="val" id="vRev">22%</span></label>
+        <input type="range" id="rev" min="0" max="100" step="1" value="22">
+      </div>
+      <div class="ctl">
+        <label>Vibrato</label>
+        <button class="btn" id="btnVib">Vibrato: off</button>
+      </div>
+      <div class="ctl">
+        <label>Sustain</label>
+        <button class="btn" id="btnSus">Sustain: off</button>
+      </div>
+    </div>
+
+    <div class="tracks-panel">
+      <div class="tracks-head">
+        <span class="tracks-title">Tracks</span>
+        <span class="hint">Each instrument you record on becomes its own track. Press Play to hear all active tracks together. M = mute, S = solo, x = delete.</span>
+        <button class="btn ghost" id="clearTracks">Clear all</button>
+      </div>
+      <div class="tracks" id="tracks"></div>
+    </div>
+    <div class="hint">Play with the mouse (drag across keys for a run) or the computer keyboard: <b>A W S E D F T G Y H U J K</b> &middot; octave with <b>Z / X</b> &middot; the articulation above applies to every note you play.</div>
+  </section>
+
+  <aside class="sarvam">
+    <h4>Sarvam language layer</h4>
+    <div class="hint" style="margin-bottom:10px">The instruments and their notes come from the open-source synthesis engine in this file. Sarvam handles the <b>language</b> side: localise the interface and narrate notes with Bulbul. Paste your key &mdash; it stays in this browser only.</div>
+    <div class="field">
+      <label style="font-size:11px;color:var(--muted)">Sarvam API key</label>
+      <input type="password" id="sarvamKey" placeholder="api-subscription-key">
+    </div>
+    <div class="field">
+      <label style="font-size:11px;color:var(--muted)">Target language</label>
+      <select id="sarvamLang">
+        <option value="hi-IN">Hindi</option>
+        <option value="bn-IN">Bengali</option>
+        <option value="ta-IN">Tamil</option>
+        <option value="te-IN">Telugu</option>
+        <option value="kn-IN">Kannada</option>
+        <option value="ml-IN">Malayalam</option>
+        <option value="mr-IN">Marathi</option>
+        <option value="gu-IN">Gujarati</option>
+        <option value="pa-IN">Punjabi</option>
+        <option value="od-IN">Odia</option>
+      </select>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" id="btnTranslate">Translate UI</button>
+      <button class="btn" id="btnSpeak">Speak note</button>
+    </div>
+    <div class="field">
+      <label style="font-size:11px;color:var(--muted)">Speak / translate text</label>
+      <textarea id="sarvamText">Violin, note A4, with a trill.</textarea>
+    </div>
+    <div class="status" id="sarvamStatus"></div>
+    <div class="hint" style="margin-top:10px">Calls go straight from your browser to Sarvam. If your network blocks cross-origin requests, run a tiny server-side proxy and point it here.</div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   Instrument Studio — self-contained Web Audio instrument engine
+   ============================================================ */
+
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+const midiToName = m => NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+/* ---------- instrument library ---------- */
+function S(p){ return Object.assign({
+  waves:[{type:"sawtooth",gain:1}], cutoff:6, q:0.7, a:0.05, d:0.1, s:0.85, r:0.2,
+  peak:0.8, noise:0, filterEnv:false, filterEnvStart:0.4, filterEnvTime:0.12, vibrato:null
+}, p); }
+
+const INST = [
+  // Keys
+  {id:"piano", name:"Grand Piano", family:"Keys", engine:"piano", params:{
+     partials:[{m:1,a:1,d:3.6},{m:2,a:0.45,d:2.6},{m:3,a:0.27,d:1.9},{m:4,a:0.16,d:1.4},
+               {m:5,a:0.10,d:1.0},{m:6,a:0.07,d:0.8},{m:7,a:0.05,d:0.6},{m:8,a:0.03,d:0.5}],
+     inharm:0.0004, decay:1, amp:0.34}},
+  {id:"epiano", name:"Electric Piano", family:"Keys", engine:"epiano", params:{}},
+  {id:"harpsichord", name:"Harpsichord", family:"Keys", engine:"pluck", params:{decay:0.9, bright:0.75, amp:0.6}},
+  {id:"clavinet", name:"Clavinet", family:"Keys", engine:"pluck", params:{decay:0.55, bright:0.6, amp:0.6}},
+  {id:"organ", name:"Pipe Organ", family:"Keys", engine:"organ", params:{drawbars:[1,0.6,0.9,0.4,0.5,0.3,0.22,0.16], a:0.03, r:0.12, peak:0.32}},
+  {id:"accordion", name:"Accordion", family:"Keys", engine:"sustained", params:S({
+     waves:[{type:"sawtooth",detune:-6,gain:0.6},{type:"sawtooth",detune:6,gain:0.6}],
+     cutoff:5, a:0.05, d:0.05, s:0.95, r:0.15, vibrato:{depth:5,rate:5.5}, peak:0.6})},
+  {id:"celesta", name:"Celesta", family:"Keys", engine:"mallet", params:{partials:[{m:1,a:1,d:1.3},{m:4,a:0.25,d:0.7}], amp:0.5}},
+
+  // Strings
+  {id:"violin", name:"Violin", family:"Strings", engine:"sustained", params:S({
+     cutoff:6.5, a:0.11, d:0.12, s:0.85, r:0.25, noise:0.012, vibrato:{depth:10,rate:6}, peak:0.7})},
+  {id:"viola", name:"Viola", family:"Strings", engine:"sustained", params:S({
+     cutoff:5.5, a:0.13, d:0.12, s:0.85, r:0.28, noise:0.012, vibrato:{depth:8,rate:5.5}, peak:0.7})},
+  {id:"cello", name:"Cello", family:"Strings", engine:"sustained", params:S({
+     cutoff:5, a:0.15, d:0.14, s:0.85, r:0.3, noise:0.012, vibrato:{depth:7,rate:5.2}, peak:0.75})},
+  {id:"doublebass", name:"Double Bass", family:"Strings", engine:"sustained", params:S({
+     cutoff:4, a:0.18, d:0.15, s:0.85, r:0.35, noise:0.012, vibrato:{depth:5,rate:4.6}, peak:0.8})},
+  {id:"strings", name:"String Ensemble", family:"Strings", engine:"sustained", params:S({
+     waves:[{type:"sawtooth",detune:-9,gain:0.5},{type:"sawtooth",detune:9,gain:0.5},{type:"sawtooth",detune:0,gain:0.5}],
+     cutoff:4.5, a:0.35, d:0.2, s:0.9, r:0.7, vibrato:{depth:6,rate:4.5}, peak:0.6})},
+  {id:"pizz", name:"Pizzicato Strings", family:"Strings", engine:"pluck", params:{decay:0.3, bright:0.5, amp:0.65}},
+  {id:"harp", name:"Harp", family:"Strings", engine:"pluck", params:{decay:3.2, bright:0.55, amp:0.6}},
+
+  // Woodwinds
+  {id:"flute", name:"Flute", family:"Woodwinds", engine:"sustained", params:S({
+     waves:[{type:"sine",gain:1},{type:"triangle",gain:0.12}], cutoff:3, a:0.06, d:0.1, s:0.9, r:0.2,
+     noise:0.035, vibrato:{depth:8,rate:5}, peak:0.55})},
+  {id:"piccolo", name:"Piccolo", family:"Woodwinds", engine:"sustained", params:S({
+     waves:[{type:"sine",gain:1},{type:"triangle",gain:0.18}], cutoff:3.2, a:0.04, d:0.1, s:0.9, r:0.18,
+     noise:0.03, vibrato:{depth:8,rate:6}, peak:0.5})},
+  {id:"oboe", name:"Oboe", family:"Woodwinds", engine:"sustained", params:S({
+     cutoff:8, q:2, a:0.05, d:0.1, s:0.88, r:0.2, noise:0.02, vibrato:{depth:9,rate:5.5}, peak:0.55})},
+  {id:"clarinet", name:"Clarinet", family:"Woodwinds", engine:"sustained", params:S({
+     waves:[{type:"square",gain:0.8},{type:"sine",gain:0.4}], cutoff:5, a:0.06, d:0.1, s:0.9, r:0.2,
+     noise:0.015, vibrato:{depth:6,rate:5}, peak:0.55})},
+  {id:"bassoon", name:"Bassoon", family:"Woodwinds", engine:"sustained", params:S({
+     cutoff:4.5, a:0.08, d:0.12, s:0.88, r:0.25, noise:0.02, vibrato:{depth:6,rate:4.8}, peak:0.65})},
+  {id:"sax", name:"Saxophone", family:"Woodwinds", engine:"sustained", params:S({
+     cutoff:6.5, q:1.5, a:0.05, d:0.1, s:0.9, r:0.22, noise:0.03, vibrato:{depth:8,rate:5.5}, peak:0.6})},
+
+  // Brass
+  {id:"trumpet", name:"Trumpet", family:"Brass", engine:"sustained", params:S({
+     cutoff:7, a:0.06, d:0.1, s:0.8, r:0.2, filterEnv:true, filterEnvStart:0.35, filterEnvTime:0.1,
+     noise:0.012, peak:0.75})},
+  {id:"trombone", name:"Trombone", family:"Brass", engine:"sustained", params:S({
+     cutoff:5.5, a:0.07, d:0.1, s:0.82, r:0.22, filterEnv:true, filterEnvStart:0.35, filterEnvTime:0.12, peak:0.8})},
+  {id:"frenchhorn", name:"French Horn", family:"Brass", engine:"sustained", params:S({
+     cutoff:4.5, a:0.12, d:0.12, s:0.85, r:0.3, filterEnv:true, filterEnvStart:0.4, filterEnvTime:0.14,
+     vibrato:{depth:5,rate:4.8}, peak:0.7})},
+  {id:"tuba", name:"Tuba", family:"Brass", engine:"sustained", params:S({
+     cutoff:3.2, a:0.12, d:0.12, s:0.85, r:0.3, filterEnv:true, filterEnvStart:0.4, filterEnvTime:0.14, peak:0.85})},
+  {id:"brass", name:"Brass Ensemble", family:"Brass", engine:"sustained", params:S({
+     waves:[{type:"sawtooth",detune:-8,gain:0.5},{type:"sawtooth",detune:8,gain:0.5}],
+     cutoff:6, a:0.1, d:0.12, s:0.85, r:0.3, filterEnv:true, filterEnvStart:0.4, filterEnvTime:0.12, peak:0.6})},
+
+  // Plucked / Guitar
+  {id:"acoustic", name:"Acoustic Guitar", family:"Guitar", engine:"pluck", params:{decay:2.2, bright:0.6, amp:0.6}},
+  {id:"electric", name:"Electric Guitar", family:"Guitar", engine:"pluck", params:{decay:2.6, bright:0.42, amp:0.6}},
+  {id:"bassguitar", name:"Bass Guitar", family:"Guitar", engine:"pluck", params:{decay:2.4, bright:0.3, amp:0.8}},
+  {id:"banjo", name:"Banjo", family:"Guitar", engine:"pluck", params:{decay:1.1, bright:0.85, amp:0.55}},
+  {id:"sitar", name:"Sitar", family:"Guitar", engine:"pluck", params:{decay:3.0, bright:0.72, amp:0.55}},
+  {id:"tanpura", name:"Tanpura", family:"Guitar", engine:"pluck", params:{decay:4.0, bright:0.5, amp:0.6}},
+
+  // Mallets & Percussion
+  {id:"marimba", name:"Marimba", family:"Mallet", engine:"mallet", params:{partials:[{m:1,a:1,d:0.5},{m:4,a:0.28,d:0.24},{m:10,a:0.07,d:0.1}], amp:0.7}},
+  {id:"xylophone", name:"Xylophone", family:"Mallet", engine:"mallet", params:{partials:[{m:1,a:1,d:0.34},{m:3,a:0.5,d:0.2},{m:6,a:0.14,d:0.1}], amp:0.6}},
+  {id:"vibraphone", name:"Vibraphone", family:"Mallet", engine:"mallet", params:{partials:[{m:1,a:1,d:2.6},{m:4,a:0.2,d:1.5}], amp:0.5, tremolo:{rate:5,depth:0.28}}},
+  {id:"glockenspiel", name:"Glockenspiel", family:"Mallet", engine:"mallet", params:{partials:[{m:1,a:1,d:1.5},{m:2.76,a:0.5,d:1.0},{m:5.4,a:0.2,d:0.6}], amp:0.42}},
+  {id:"steeldrums", name:"Steel Drums", family:"Mallet", engine:"mallet", params:{partials:[{m:1,a:1,d:1.2},{m:2,a:0.5,d:0.8},{m:3,a:0.3,d:0.5}], amp:0.55}},
+  {id:"timpani", name:"Timpani", family:"Percussion", engine:"perc", params:{pitchDrop:true, dropTime:0.09, decay:1.2, noise:0.16, noiseFreq:320, amp:0.85}},
+  {id:"tabla", name:"Tabla", family:"Percussion", engine:"perc", params:{pitchDrop:true, dropTime:0.03, decay:0.6, noise:0.45, noiseFreq:2600, amp:0.75}},
+
+  // Synth & Voice
+  {id:"synthlead", name:"Synth Lead", family:"Synth", engine:"sustained", params:S({
+     cutoff:8, q:4, a:0.01, d:0.1, s:0.7, r:0.15, peak:0.6})},
+  {id:"synthpad", name:"Synth Pad", family:"Synth", engine:"sustained", params:S({
+     waves:[{type:"sawtooth",detune:-11,gain:0.5},{type:"sawtooth",detune:11,gain:0.5}],
+     cutoff:3, a:0.6, d:0.3, s:0.85, r:1.2, vibrato:{depth:4,rate:0.35}, peak:0.5})},
+  {id:"synthbass", name:"Synth Bass", family:"Synth", engine:"sustained", params:S({
+     cutoff:3, q:3, a:0.005, d:0.15, s:0.6, r:0.12, peak:0.75})},
+  {id:"synthbell", name:"Synth Bell", family:"Synth", engine:"mallet", params:{partials:[{m:1,a:1,d:2.0},{m:2.76,a:0.5,d:1.4},{m:5.4,a:0.25,d:0.9}], amp:0.45}},
+  {id:"choir", name:"Choir (Aah)", family:"Voice", engine:"sustained", params:S({
+     waves:[{type:"sawtooth",detune:-7,gain:0.5},{type:"sawtooth",detune:7,gain:0.5},{type:"triangle",gain:0.4}],
+     cutoff:3.5, a:0.3, d:0.2, s:0.9, r:0.7, vibrato:{depth:6,rate:4.5}, peak:0.55})},
+];
+
+/* ---------- audio graph ---------- */
+let ac, master, dry, convolver, revGain, analyser, scopeData;
+const state = { inst: INST[0], articulation:"Normal", rate:7, trillInt:2,
+  vibDepth:14, vibRate:5.5, vibratoOn:false, sustain:false, octave:0,
+  volume:0.8, reverb:0.22, baseOctave:4 };
+const held = new Map();
+let lastMidi = null;
+
+function makeImpulse(seconds, decay){
+  const rate = ac.sampleRate, len = Math.floor(rate * seconds);
+  const buf = ac.createBuffer(2, len, rate);
+  for (let c = 0; c < 2; c++){
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, decay);
+  }
+  return buf;
+}
+
+function initAudio(){
+  if (ac) return;
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = state.volume;
+  dry = ac.createGain();
+  convolver = ac.createConvolver(); convolver.buffer = makeImpulse(2.4, 2.6);
+  revGain = ac.createGain(); revGain.gain.value = state.reverb;
+  analyser = ac.createAnalyser(); analyser.fftSize = 1024;
+  scopeData = new Uint8Array(analyser.fftSize);
+  master.connect(dry); dry.connect(analyser);
+  master.connect(convolver); convolver.connect(revGain); revGain.connect(analyser);
+  analyser.connect(ac.destination);
+  startScope();
+}
+
+function resumeAudio(){ initAudio(); if (ac.state === "suspended") ac.resume(); }
+
+/* ---------- helpers ---------- */
+function noiseBuffer(seconds){
+  const len = Math.max(1, Math.floor(ac.sampleRate * seconds));
+  const b = ac.createBuffer(1, len, ac.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random()*2-1;
+  return b;
+}
+
+/* ---------- engines ---------- */
+function vPiano(dest, freq, when, dur, p){
+  const out = ac.createGain(); out.connect(dest); out.gain.value = 1;
+  const rel = ac.createGain(); rel.connect(out); rel.gain.value = 1;
+  p.partials.forEach(pt => {
+    const o = ac.createOscillator(); o.type = "sine";
+    o.frequency.value = freq * pt.m * (1 + p.inharm * pt.m * pt.m);
+    const g = ac.createGain();
+    const peak = pt.a * p.amp;
+    const decay = pt.d * p.decay;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(peak, when + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0002, when + decay);
+    o.connect(g); g.connect(rel);
+    o.start(when); o.stop(when + decay + 0.05);
+  });
+  const nz = ac.createBufferSource(); nz.buffer = noiseBuffer(0.02);
+  const nf = ac.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = Math.min(freq*8, 9000); nf.Q.value = 0.6;
+  const ng = ac.createGain(); ng.gain.setValueAtTime(0.06, when); ng.gain.exponentialRampToValueAtTime(0.0002, when+0.06);
+  nz.connect(nf); nf.connect(ng); ng.connect(rel); nz.start(when);
+  return { stop(t){ if (t <= when) return; rel.gain.cancelScheduledValues(t); rel.gain.setTargetAtTime(0, t, 0.04); } };
+}
+
+function vEPiano(dest, freq, when, dur, p){
+  const out = ac.createGain(); out.connect(dest); out.gain.value = 0.6;
+  const car = ac.createOscillator(); car.type = "sine"; car.frequency.value = freq;
+  const mod = ac.createOscillator(); mod.type = "sine"; mod.frequency.value = freq * 2;
+  const mg = ac.createGain();
+  mg.gain.setValueAtTime(freq * 3.5, when);
+  mg.gain.exponentialRampToValueAtTime(freq * 0.25, when + 0.7);
+  mod.connect(mg); mg.connect(car.frequency);
+  const g = ac.createGain();
+  const end = when + Math.max(dur + 0.5, 1.7);
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(0.85, when + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0002, end);
+  car.connect(g); g.connect(out);
+  car.start(when); mod.start(when);
+  car.stop(end + 0.05); mod.stop(end + 0.05);
+  return { stop(t){ if (t <= when) return; g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0, t, 0.05); } };
+}
+
+function pluckBuffer(freq, seconds, p){
+  const sr = ac.sampleRate;
+  const N = Math.max(2, Math.round(sr / freq) + 1);   // +1 compensates the loop filter's phase delay (tuning)
+  const len = Math.max(N + 1, Math.floor(seconds * sr));
+  const dl = new Float32Array(N);
+  for (let i = 0; i < N; i++) dl[i] = Math.random()*2 - 1;
+  if (p.bright != null){
+    let prev = 0; const c = clamp(p.bright, 0.02, 1);
+    for (let i = 0; i < N; i++){ prev += c * (dl[i] - prev); dl[i] = prev; }
+  }
+  const fb = Math.min(0.9999, Math.exp(-1 / ((p.decay || 1.5) * freq)));
+  const out = new Float32Array(len);
+  let idx = 0;
+  for (let n = 0; n < len; n++){
+    const cur = dl[idx];
+    const nxt = dl[(idx + 1) % N];
+    dl[idx] = (cur + nxt) * 0.5 * fb;
+    out[n] = cur;
+    idx = (idx + 1) % N;
+  }
+  let peak = 0; for (let n = 0; n < len; n++) peak = Math.max(peak, Math.abs(out[n]));
+  const norm = peak > 0 ? 0.9 / peak : 1;
+  for (let n = 0; n < len; n++) out[n] *= norm;
+  const a = Math.floor(0.003 * sr);
+  for (let n = 0; n < a && n < len; n++) out[n] *= n / a;
+  const r = Math.floor(0.04 * sr);
+  for (let n = 0; n < r && n < len; n++) out[len-1-n] *= n / r;
+  const buf = ac.createBuffer(1, len, sr);
+  buf.copyToChannel(out, 0);
+  return buf;
+}
+
+function vPluck(dest, freq, when, dur, p, opts){
+  const seconds = opts.finite ? Math.max(0.15, dur + (p.r || 0.3))
+                              : Math.min((p.decay || 1.5) * 4, 6);
+  const src = ac.createBufferSource(); src.buffer = pluckBuffer(freq, seconds, p);
+  const g = ac.createGain(); g.gain.value = p.amp || 0.7;
+  src.connect(g); g.connect(dest);
+  src.start(when);
+  const endT = when + seconds;
+  return { stop(t){ if (t <= when || t >= endT) return; g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0, t, 0.02); try{ src.stop(t + 0.2); }catch(e){} } };
+}
+
+function vSustained(dest, freq, when, dur, p, opts){
+  const out = ac.createGain(); out.connect(dest);
+  const filt = ac.createBiquadFilter();
+  filt.type = p.filterType || "lowpass";
+  filt.Q.value = p.q || 0.7;
+  const base = Math.min((p.cutoff || 6) * freq, 16000);
+  filt.frequency.setValueAtTime(base * (p.filterEnv ? (p.filterEnvStart || 0.4) : 1), when);
+  if (p.filterEnv) filt.frequency.linearRampToValueAtTime(base, when + (p.filterEnvTime || 0.12));
+  filt.connect(out);
+  const oscs = [];
+  (p.waves || [{type:"sawtooth",gain:1}]).forEach(w => {
+    const o = ac.createOscillator(); o.type = w.type; o.frequency.value = freq;
+    if (w.detune) o.detune.value = w.detune;
+    const og = ac.createGain(); og.gain.value = w.gain;
+    o.connect(og); og.connect(filt);
+    oscs.push(o);
+  });
+  let nsrc = null;
+  if (p.noise){
+    nsrc = ac.createBufferSource(); nsrc.buffer = noiseBuffer(Math.max(0.6, dur + 0.6)); nsrc.loop = true;
+    const nf = ac.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = Math.min(freq*4, 8000); nf.Q.value = 0.8;
+    const ng = ac.createGain(); ng.gain.value = p.noise;
+    nsrc.connect(nf); nf.connect(ng); ng.connect(filt);
+  }
+  const vib = (opts && opts.vibrato) || p.vibrato;
+  let lfo = null, lg = null;
+  if (vib && vib.depth > 0){
+    lfo = ac.createOscillator(); lfo.frequency.value = vib.rate;
+    lg = ac.createGain(); lg.gain.value = vib.depth;
+    lfo.connect(lg); oscs.forEach(o => lg.connect(o.detune));
+  }
+  if (opts && opts.glideFrom != null){
+    oscs.forEach(o => {
+      o.frequency.setValueAtTime(opts.glideFrom, when);
+      o.frequency.exponentialRampToValueAtTime(freq, when + (opts.glideTime || 0.1));
+    });
+  }
+  const a = p.a, d = p.d, s = p.s, r = p.r, peak = (p.peak || 0.8) * ((opts && opts.peakMul) || 1);
+  const g = out.gain;
+  g.setValueAtTime(0, when);
+  g.linearRampToValueAtTime(peak, when + a);
+  g.linearRampToValueAtTime(peak * s, when + a + d);
+  let endT = null;
+  if (opts && opts.finite){ endT = when + dur; g.setValueAtTime(peak * s, endT); g.linearRampToValueAtTime(0, endT + r); }
+  const stopAt = endT != null ? endT + r + 0.05 : null;
+  oscs.forEach(o => { o.start(when); if (stopAt) o.stop(stopAt); });
+  if (nsrc) { nsrc.start(when); if (stopAt) nsrc.stop(stopAt); }
+  if (lfo) { lfo.start(when); if (stopAt) lfo.stop(stopAt); }
+  return { stop(t){
+    if (t <= when) return;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+    g.setTargetAtTime(0, t, Math.max(0.02, r / 3));
+    oscs.forEach(o => { try{ o.stop(t + r + 0.1); }catch(e){} });
+    if (nsrc) try{ nsrc.stop(t + r + 0.1); }catch(e){}
+    if (lfo) try{ lfo.stop(t + r + 0.1); }catch(e){}
+  }};
+}
+
+function vOrgan(dest, freq, when, dur, p, opts){
+  const out = ac.createGain(); out.connect(dest);
+  const g = out.gain;
+  const peak = (p.peak || 0.32) * ((opts && opts.peakMul) || 1);
+  g.setValueAtTime(0, when);
+  g.linearRampToValueAtTime(peak, when + (p.a || 0.03));
+  let endT = null;
+  if (opts && opts.finite){ endT = when + dur; g.setValueAtTime(peak, endT); g.linearRampToValueAtTime(0, endT + (p.r || 0.12)); }
+  const oscs = [];
+  p.drawbars.forEach((amp, i) => {
+    if (amp <= 0) return;
+    const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = freq * (i + 1);
+    const og = ac.createGain(); og.gain.value = amp;
+    o.connect(og); og.connect(out);
+    o.start(when);
+    if (endT != null) o.stop(endT + (p.r || 0.12) + 0.05);
+    oscs.push(o);
+  });
+  return { stop(t){
+    if (t <= when) return;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+    g.setTargetAtTime(0, t, 0.03);
+    oscs.forEach(o => { try{ o.stop(t + 0.2); }catch(e){} });
+  }};
+}
+
+function vMallet(dest, freq, when, dur, p, opts){
+  const out = ac.createGain(); out.connect(dest); out.gain.value = p.amp || 0.6;
+  const rel = ac.createGain(); rel.connect(out); rel.gain.value = 1;
+  let maxDecay = 0.5;
+  p.partials.forEach(pt => {
+    const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = freq * pt.m;
+    const g = ac.createGain();
+    const decay = pt.d * (p.decay || 1);
+    maxDecay = Math.max(maxDecay, decay);
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(pt.a, when + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0002, when + decay);
+    o.connect(g); g.connect(rel);
+    o.start(when); o.stop(when + decay + 0.05);
+  });
+  if (p.tremolo){
+    const lfo = ac.createOscillator(); lfo.frequency.value = p.tremolo.rate || 5;
+    const lg = ac.createGain(); lg.gain.value = p.tremolo.depth || 0.3;
+    lfo.connect(lg); lg.connect(rel.gain);
+    lfo.start(when); lfo.stop(when + maxDecay + 0.5);
+  }
+  const nz = ac.createBufferSource(); nz.buffer = noiseBuffer(0.015);
+  const ng = ac.createGain(); ng.gain.setValueAtTime(0.08, when); ng.gain.exponentialRampToValueAtTime(0.0002, when+0.03);
+  nz.connect(ng); ng.connect(rel); nz.start(when);
+  return { stop(t){ if (t <= when) return; rel.gain.cancelScheduledValues(t); rel.gain.setTargetAtTime(0, t, 0.03); } };
+}
+
+function vPerc(dest, freq, when, dur, p, opts){
+  const out = ac.createGain(); out.connect(dest); out.gain.value = p.amp || 0.7;
+  const o = ac.createOscillator(); o.type = "sine";
+  o.frequency.setValueAtTime(freq * (p.pitchDrop ? 1.5 : 1), when);
+  if (p.pitchDrop) o.frequency.exponentialRampToValueAtTime(freq, when + (p.dropTime || 0.08));
+  const g = ac.createGain();
+  const decay = p.decay || 0.8;
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(1, when + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0002, when + decay);
+  o.connect(g); g.connect(out);
+  o.start(when); o.stop(when + decay + 0.05);
+  if (p.noise){
+    const ns = ac.createBufferSource(); ns.buffer = noiseBuffer(decay);
+    const nf = ac.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = p.noiseFreq || 1800; nf.Q.value = 0.7;
+    const ng = ac.createGain();
+    ng.gain.setValueAtTime(p.noise, when);
+    ng.gain.exponentialRampToValueAtTime(0.0002, when + decay * 0.6);
+    ns.connect(nf); nf.connect(ng); ng.connect(out);
+    ns.start(when);
+  }
+  return { stop(){} };
+}
+
+function makeVoice(dest, inst, freq, when, dur, opts){
+  const p = inst.params || {};
+  switch (inst.engine){
+    case "piano":    return vPiano(dest, freq, when, dur, p, opts);
+    case "epiano":   return vEPiano(dest, freq, when, dur, p, opts);
+    case "pluck":    return vPluck(dest, freq, when, dur, p, opts);
+    case "sustained":return vSustained(dest, freq, when, dur, p, opts);
+    case "organ":    return vOrgan(dest, freq, when, dur, p, opts);
+    case "mallet":   return vMallet(dest, freq, when, dur, p, opts);
+    case "perc":     return vPerc(dest, freq, when, dur, p, opts);
+    default:         return vSustained(dest, freq, when, dur, p, opts);
+  }
+}
+function isDecaying(inst){ return ["piano","epiano","pluck","mallet","perc"].indexOf(inst.engine) !== -1; }
+
+/* ---------- playing ---------- */
+function voiceOpts(){
+  const o = {};
+  const vib = state.vibratoOn || state.articulation === "Vibrato";
+  if (vib) o.vibrato = { depth: state.vibDepth, rate: state.vibRate };
+  if (state.articulation === "Accent" || state.articulation === "Marcato") o.peakMul = 1.35;
+  return o;
+}
+
+function artParams(){
+  switch (state.articulation){
+    case "Staccato": return { finite:true, len:0.16 };
+    case "Tenuto":   return { finite:true, len:0.85 };
+    case "Marcato":  return { finite:true, len:0.45 };
+    case "Fermata":  return { finite:true, len:2.2 };
+    case "Legato":   return { finite:false, softer:true };
+    default:         return { finite:false };
+  }
+}
+
+function noteOn(midi){
+  resumeAudio();
+  const key = midi;
+  if (held.has(key)) return;
+  const inst = state.inst;
+  const when = ac.currentTime + 0.001;
+  const group = { voices:[], timers:[], midi };
+  const art = state.articulation;
+
+  if (art === "Trill" || art === "Tremolo"){
+    startRepeat(group);
+  } else if (art === "Glissando" || art === "Portamento"){
+    playGlide(group, midi, art);
+  } else {
+    const ap = artParams();
+    const opts = voiceOpts();
+    opts.finite = ap.finite;
+    const v = makeVoice(master, inst, midiToFreq(midi), when, ap.len || 0.6, opts);
+    group.voices.push(v);
+    if (ap.finite) setTimeout(() => { /* auto-stops via envelope */ }, 0);
+  }
+  held.set(key, group);
+  lastMidi = midi;
+  highlight(midi, true);
+  setReadout(midi);
+  if (recording) recordEvent(midi, art);
+}
+
+function noteOff(midi){
+  const group = held.get(midi);
+  if (!group) return;
+  group.timers.forEach(t => clearInterval(t));
+  const t = ac.currentTime + 0.02;
+  group.voices.forEach(v => { try{ v.stop(t); }catch(e){} });
+  held.delete(midi);
+  highlight(midi, false);
+  if (recording) finishEvent(midi);
+}
+
+function startRepeat(group){
+  const inst = state.inst;
+  const interval = 1 / state.rate;
+  let flip = false;
+  const tick = () => {
+    const t = ac.currentTime + 0.01;
+    group.voices.forEach(v => { try{ v.stop(t); }catch(e){} });
+    group.voices = [];
+    let m = group.midi;
+    if (state.articulation === "Trill"){ flip = !flip; if (flip) m = group.midi + state.trillInt; }
+    const opts = voiceOpts(); opts.finite = true;
+    const v = makeVoice(master, inst, midiToFreq(m), t, interval * 0.92, opts);
+    group.voices.push(v);
+  };
+  tick();
+  group.timers.push(setInterval(tick, interval * 1000));
+}
+
+function playGlide(group, midi, art){
+  const inst = state.inst;
+  const t0 = ac.currentTime + 0.01;
+  const fromMidi = (lastMidi != null) ? lastMidi : midi;
+  if (isDecaying(inst)){
+    const dir = midi >= fromMidi ? 1 : -1;
+    let n = fromMidi; let i = 0;
+    const step = () => {
+      const t = ac.currentTime + 0.01;
+      const opts = voiceOpts(); opts.finite = true;
+      const v = makeVoice(master, inst, midiToFreq(n), t, 0.18, opts);
+      group.voices.push(v);
+      if (n !== midi){ n += dir; i++; group.timers.push(setTimeout(step, 55)); }
+    };
+    step();
+  } else {
+    const opts = voiceOpts();
+    opts.glideFrom = midiToFreq(fromMidi);
+    opts.glideTime = art === "Portamento" ? 0.28 : 0.09;
+    const v = makeVoice(master, inst, midiToFreq(midi), t0, 0.6, opts);
+    group.voices.push(v);
+  }
+}
+
+/* ---------- recording: multitrack, one track per instrument ---------- */
+let recording = false, recordStart = 0, events = [], openEvents = new Map(), loopTimers = [];
+const trackMute = new Set(), trackSolo = new Set();
+
+function recordEvent(midi, art){
+  const ev = { midi, t: ac.currentTime - recordStart, dur: 0.5, inst: state.inst.id, art };
+  events.push(ev); openEvents.set(midi, ev);
+  updateCount(); renderTracks();
+}
+function finishEvent(midi){
+  const ev = openEvents.get(midi);
+  if (ev){ ev.dur = Math.max(0.12, ac.currentTime - recordStart - ev.t); openEvents.delete(midi); }
+}
+function updateCount(){ document.getElementById("countPill").textContent = events.length + " notes"; }
+
+function trackList(){
+  const map = new Map();
+  events.forEach(e => map.set(e.inst, (map.get(e.inst) || 0) + 1));
+  return [...map.entries()].map(([id, count]) => {
+    const inst = INST.find(i => i.id === id);
+    return { id, count, name: inst ? inst.name : id };
+  });
+}
+function activeTrack(id){
+  if (trackSolo.size) return trackSolo.has(id);
+  return !trackMute.has(id);
+}
+function renderTracks(){
+  const el = document.getElementById("tracks");
+  if (!el) return;
+  const list = trackList();
+  if (!list.length){
+    el.innerHTML = '<span class="hint">No tracks yet. Press Record, play notes on one instrument, switch instrument, and record again.</span>';
+    return;
+  }
+  el.innerHTML = "";
+  list.forEach(t => {
+    const d = document.createElement("div");
+    d.className = "track" + (activeTrack(t.id) ? "" : " muted");
+    const nm = document.createElement("span"); nm.className = "tname"; nm.textContent = t.name;
+    const ct = document.createElement("span"); ct.className = "tcount"; ct.textContent = t.count;
+    const m = document.createElement("button"); m.className = "tbtn" + (trackMute.has(t.id) ? " on" : "");
+    m.textContent = "M"; m.title = "Mute this track";
+    m.onclick = () => { trackMute.has(t.id) ? trackMute.delete(t.id) : trackMute.add(t.id); renderTracks(); };
+    const s = document.createElement("button"); s.className = "tbtn" + (trackSolo.has(t.id) ? " on" : "");
+    s.textContent = "S"; s.title = "Solo this track";
+    s.onclick = () => { trackSolo.has(t.id) ? trackSolo.delete(t.id) : trackSolo.add(t.id); renderTracks(); };
+    const x = document.createElement("button"); x.className = "tbtn"; x.textContent = "x"; x.title = "Delete this track";
+    x.onclick = () => { events = events.filter(e => e.inst !== t.id); trackMute.delete(t.id); trackSolo.delete(t.id); updateCount(); renderTracks(); };
+    d.appendChild(nm); d.appendChild(ct); d.appendChild(m); d.appendChild(s); d.appendChild(x);
+    el.appendChild(d);
+  });
+}
+
+/* ---------- UI ---------- */
+function currentFamilyFilter(){ return famFilter; }
+let famFilter = "All";
+
+function buildLibrary(){
+  const fams = ["All", ...Array.from(new Set(INST.map(i => i.family)))];
+  const chips = document.getElementById("famChips");
+  chips.innerHTML = "";
+  fams.forEach(f => {
+    const b = document.createElement("button");
+    b.className = "chip" + (f === famFilter ? " on" : "");
+    b.textContent = f;
+    b.onclick = () => { famFilter = f; buildLibrary(); };
+    chips.appendChild(b);
+  });
+  const q = (document.getElementById("search").value || "").toLowerCase();
+  const list = document.getElementById("instList");
+  list.innerHTML = "";
+  let lastFam = null;
+  INST.filter(i => (famFilter === "All" || i.family === famFilter) &&
+                   (!q || i.name.toLowerCase().includes(q))).forEach(i => {
+    if (i.family !== lastFam){ lastFam = i.family;
+      const h = document.createElement("div"); h.className = "famhead"; h.textContent = i.family; list.appendChild(h);
+    }
+    const b = document.createElement("button");
+    b.className = "inst" + (i.id === state.inst.id ? " on" : "");
+    b.innerHTML = i.name + "<small>" + i.engine + "</small>";
+    b.onclick = () => selectInstrument(i);
+    list.appendChild(b);
+  });
+}
+
+function selectInstrument(i){
+  state.inst = i;
+  document.getElementById("npName").innerHTML = i.name + "<small>" + i.family + "</small>";
+  document.getElementById("hdrInst").textContent = i.name;
+  buildLibrary();
+}
+
+const WHITE_SEMIS = [0,2,4,5,7,9,11];
+const BLACK_AFTER = [[0,1],[1,3],[3,6],[4,8],[5,10]];
+const NUM_OCT = 3;
+
+function buildKeyboard(){
+  const kb = document.getElementById("keyboard");
+  kb.innerHTML = "";
+  const start = (state.baseOctave + state.octave + 1) * 12;
+  const totalWhite = NUM_OCT * 7;
+  const ww = 100 / totalWhite;
+  const bw = ww * 0.62;
+  for (let o = 0; o < NUM_OCT; o++){
+    for (let wi = 0; wi < 7; wi++){
+      const midi = start + o * 12 + WHITE_SEMIS[wi];
+      const el = document.createElement("div");
+      el.className = "wkey"; el.dataset.midi = midi;
+      el.style.left = ((o * 7 + wi) * ww) + "%";
+      el.style.width = ww + "%";
+      if (WHITE_SEMIS[wi] === 0){ const l = document.createElement("span"); l.className = "lbl"; l.textContent = midiToName(midi); el.appendChild(l); }
+      attachKey(el, midi);
+      kb.appendChild(el);
+    }
+  }
+  for (let o = 0; o < NUM_OCT; o++){
+    BLACK_AFTER.forEach(([wi, semi]) => {
+      const midi = start + o * 12 + semi;
+      const el = document.createElement("div");
+      el.className = "bkey"; el.dataset.midi = midi;
+      el.style.left = (((o * 7 + wi + 1) * ww) - bw / 2) + "%";
+      el.style.width = bw + "%";
+      attachKey(el, midi);
+      kb.appendChild(el);
+    });
+  }
+}
+
+function attachKey(el, midi){
+  el.addEventListener("pointerdown", e => { e.preventDefault(); el.setPointerCapture && el.setPointerCapture(e.pointerId); noteOn(midi); });
+  el.addEventListener("pointerup", e => { e.preventDefault(); noteOff(midi); });
+  el.addEventListener("pointercancel", () => noteOff(midi));
+  el.addEventListener("pointerenter", e => { if (e.buttons & 1) noteOn(midi); });
+  el.addEventListener("pointerleave", e => { if (e.buttons & 1) noteOff(midi); });
+}
+
+function highlight(midi, on){
+  const el = document.querySelector('.wkey[data-midi="'+midi+'"], .bkey[data-midi="'+midi+'"]');
+  if (el) el.classList.toggle("down", on);
+}
+function setReadout(midi){
+  document.getElementById("readout").textContent = midiToName(midi) + " \u00b7 " + midiToFreq(midi).toFixed(2) + " Hz";
+}
+
+/* computer keyboard */
+const KEYMAP = {"a":0,"w":1,"s":2,"e":3,"d":4,"f":5,"t":6,"g":7,"y":8,"h":9,"u":10,"j":11,"k":12,"o":13,"l":14,"p":15,";":16,"'":17};
+const downKeys = new Set();
+function kbStart(){
+  const base = (state.baseOctave + state.octave + 1) * 12;
+  document.addEventListener("keydown", e => {
+    if (e.repeat) return;
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    const k = e.key.toLowerCase();
+    if (k === "z"){ state.octave = clamp(state.octave - 1, -3, 3); document.getElementById("vOct").textContent = state.octave; buildKeyboard(); return; }
+    if (k === "x"){ state.octave = clamp(state.octave + 1, -3, 3); document.getElementById("vOct").textContent = state.octave; buildKeyboard(); return; }
+    if (k in KEYMAP && !downKeys.has(k)){ downKeys.add(k); noteOn((state.baseOctave + state.octave + 1) * 12 + KEYMAP[k]); }
+  });
+  document.addEventListener("keyup", e => {
+    const k = e.key.toLowerCase();
+    if (k in KEYMAP && downKeys.has(k)){ downKeys.delete(k); noteOff((state.baseOctave + state.octave + 1) * 12 + KEYMAP[k]); }
+  });
+}
+
+/* ---------- scope ---------- */
+function startScope(){
+  const c = document.getElementById("scope");
+  const g = c.getContext("2d");
+  function draw(){
+    requestAnimationFrame(draw);
+    const w = c.width = c.clientWidth * devicePixelRatio, h = c.height = c.clientHeight * devicePixelRatio;
+    g.clearRect(0, 0, w, h);
+    if (!analyser) return;
+    analyser.getByteTimeDomainData(scopeData);
+    g.lineWidth = 1.5 * devicePixelRatio;
+    g.strokeStyle = "#37d3c4";
+    g.beginPath();
+    for (let i = 0; i < scopeData.length; i++){
+      const x = i / scopeData.length * w;
+      const y = (scopeData[i] / 128 - 1) * (h / 2) + h / 2;
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke();
+  }
+  draw();
+}
+
+/* ---------- transport ---------- */
+function setupTransport(){
+  const btnRec = document.getElementById("btnRec");
+  btnRec.onclick = () => {
+    resumeAudio();
+    recording = !recording;
+    btnRec.classList.toggle("on", recording);
+    if (recording){ events = []; openEvents.clear(); trackMute.clear(); trackSolo.clear(); recordStart = ac.currentTime; updateCount(); renderTracks(); }
+  };
+  document.getElementById("btnPlay").onclick = () => { resumeAudio(); playLoop(); };
+  document.getElementById("btnStop").onclick = () => stopAll();
+  document.getElementById("btnExport").onclick = () => { resumeAudio(); exportWav(); };
+  document.getElementById("clearTracks").onclick = () => { events = []; trackMute.clear(); trackSolo.clear(); updateCount(); renderTracks(); };
+}
+
+function stopAll(){
+  loopTimers.forEach(t => clearTimeout(t)); loopTimers = [];
+  held.forEach((grp, midi) => noteOff(midi));
+}
+
+function playLoop(){
+  stopAll();
+  if (!events.length) return;
+  const evs = events.filter(e => activeTrack(e.inst));
+  if (!evs.length) return;
+  const loopLen = Math.max(...events.map(e => e.t + e.dur)) + 0.4;
+  const fire = () => {
+    evs.forEach(ev => {
+      const inst = INST.find(i => i.id === ev.inst) || state.inst;
+      const opts = voiceOpts(); opts.finite = true;
+      const v = makeVoice(master, inst, midiToFreq(ev.midi), ac.currentTime + 0.02, ev.dur, opts);
+      setTimeout(() => { try{ v.stop(ac.currentTime + 0.02); }catch(e){} }, ev.dur * 1000 + 40);
+    });
+  };
+  fire();
+  const id = setInterval(fire, loopLen * 1000);
+  loopTimers.push(id);
+}
+
+/* ---------- WAV export ---------- */
+function encodeWav(buffer){
+  const numCh = buffer.numberOfChannels, len = buffer.length, sr = buffer.sampleRate;
+  const bytes = 44 + len * numCh * 2;
+  const ab = new ArrayBuffer(bytes); const view = new DataView(ab);
+  const wr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  wr(0, "RIFF"); view.setUint32(4, bytes - 8, true); wr(8, "WAVE"); wr(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true); view.setUint32(28, sr * numCh * 2, true);
+  view.setUint16(32, numCh * 2, true); view.setUint16(34, 16, true); wr(36, "data");
+  view.setUint32(40, len * numCh * 2, true);
+  let o = 44;
+  const chans = []; for (let c = 0; c < numCh; c++) chans.push(buffer.getChannelData(c));
+  for (let i = 0; i < len; i++) for (let c = 0; c < numCh; c++){
+    const s = clamp(chans[c][i], -1, 1); view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2;
+  }
+  return new Blob([view], { type: "audio/wav" });
+}
+
+async function exportWav(){
+  if (!events.length){ flash("Nothing recorded yet \u2014 hit Record and play a few notes."); return; }
+  const evs = events.filter(e => activeTrack(e.inst));
+  if (!evs.length){ flash("Nothing to export - record some notes first."); return; }
+  const dur = Math.max(...evs.map(e => e.t + e.dur)) + 1.2;
+  const off = new OfflineAudioContext(1, Math.ceil(dur * 44100), 44100);
+  const mOff = off.createGain(); mOff.gain.value = state.volume; mOff.connect(off.destination);
+  // build a lightweight engine bound to the offline context
+  const savedAC = ac, savedMaster = master, savedNB = noiseBuffer;
+  // temporarily point the whole engine at the offline context
+  ac = off; master = mOff;
+  noiseBuffer = (seconds) => {
+    const len = Math.max(1, Math.floor(off.sampleRate * seconds));
+    const b = off.createBuffer(1, len, off.sampleRate); const d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random()*2-1; return b;
+  };
+  try {
+    evs.forEach(ev => {
+      const inst = INST.find(i => i.id === ev.inst) || state.inst;
+      const opts = voiceOpts(); opts.finite = true;
+      const v = makeVoice(mOff, inst, midiToFreq(ev.midi), ev.t + 0.02, ev.dur, opts);
+      try{ v.stop(ev.t + ev.dur + 0.02); }catch(e){}
+    });
+    const rendered = await off.startRendering();
+    const blob = encodeWav(rendered);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "instrument-studio.wav";
+    a.click();
+    flash("Exported instrument-studio.wav", "ok");
+  } catch (e){
+    flash("Export failed: " + e.message, "err");
+  } finally {
+    ac = savedAC; master = savedMaster; noiseBuffer = savedNB;
+  }
+}
+let flashTimer;
+function flash(msg, cls){
+  const el = document.getElementById("sarvamStatus");
+  el.textContent = msg; el.className = "status " + (cls || "");
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => { el.textContent = ""; el.className = "status"; }, 5000);
+}
+
+/* ---------- controls ---------- */
+function setupControls(){
+  const art = document.getElementById("articulation");
+  art.onchange = () => { state.articulation = art.value; };
+  const bind = (id, key, out, fmt) => {
+    const el = document.getElementById(id), o = document.getElementById(out);
+    el.oninput = () => { state[key] = parseFloat(el.value); o.textContent = fmt(state[key]); };
+  };
+  bind("rate", "rate", "vRate", v => v.toFixed(1) + " Hz");
+  bind("trillInt", "trillInt", "vTrill", v => v + " semitone" + (v > 1 ? "s" : ""));
+  bind("vibD", "vibDepth", "vVibD", v => v + " cents");
+  bind("vibR", "vibRate", "vVibR", v => v.toFixed(1) + " Hz");
+  bind("vol", "volume", "vVol", v => Math.round(v * 100) + "%");
+  bind("rev", "reverb", "vRev", v => Math.round(v * 100) + "%");
+  document.getElementById("vol").oninput = e => { state.volume = e.target.value/100; master.gain.value = state.volume; document.getElementById("vVol").textContent = Math.round(state.volume*100)+"%"; };
+  document.getElementById("rev").oninput = e => { state.reverb = e.target.value/100; revGain.gain.value = state.reverb; document.getElementById("vRev").textContent = Math.round(state.reverb*100)+"%"; };
+  document.getElementById("octUp").onclick = () => { state.octave = clamp(state.octave + 1, -3, 3); document.getElementById("vOct").textContent = state.octave; buildKeyboard(); };
+  document.getElementById("octDown").onclick = () => { state.octave = clamp(state.octave - 1, -3, 3); document.getElementById("vOct").textContent = state.octave; buildKeyboard(); };
+  const vb = document.getElementById("btnVib");
+  vb.onclick = () => { state.vibratoOn = !state.vibratoOn; vb.textContent = "Vibrato: " + (state.vibratoOn ? "on" : "off"); vb.classList.toggle("on", state.vibratoOn); };
+  const sb = document.getElementById("btnSus");
+  sb.onclick = () => { state.sustain = !state.sustain; sb.textContent = "Sustain: " + (state.sustain ? "on" : "off"); sb.classList.toggle("on", state.sustain); };
+  document.getElementById("search").oninput = buildLibrary;
+}
+
+/* ---------- Sarvam language layer ---------- */
+const SARVAM_BASE = "https://api.sarvam.ai";
+function sarvamKey(){ return (document.getElementById("sarvamKey").value || "").trim(); }
+function setStatus(msg, cls){ const el = document.getElementById("sarvamStatus"); el.textContent = msg; el.className = "status " + (cls || ""); }
+
+async function sarvamTranslate(){
+  const key = sarvamKey();
+  if (!key){ setStatus("Paste your Sarvam API key first.", "err"); return; }
+  const lang = document.getElementById("sarvamLang").value;
+  const text = document.getElementById("sarvamText").value || "Violin, note A4, with a trill.";
+  setStatus("Translating\u2026");
+  try {
+    const r = await fetch(SARVAM_BASE + "/translate", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "api-subscription-key":key },
+      body: JSON.stringify({ input:text, source_language_code:"en-IN", target_language_code:lang, model:"mayura:v1" })
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    const out = j.translated_text || (j.translations && j.translations[0]) || JSON.stringify(j);
+    setStatus("Translation (" + lang + "): " + out, "ok");
+  } catch (e){
+    setStatus("Translation failed (" + e.message + "). If this is a network/CORS error, route the call through a small server-side proxy.", "err");
+  }
+}
+
+async function sarvamSpeak(){
+  const key = sarvamKey();
+  if (!key){ setStatus("Paste your Sarvam API key first.", "err"); return; }
+  const text = document.getElementById("sarvamText").value || "A4.";
+  setStatus("Synthesising\u2026");
+  try {
+    const r = await fetch(SARVAM_BASE + "/text-to-speech", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "api-subscription-key":key },
+      body: JSON.stringify({ text, language_code:"en-IN", speaker:"ishita", model:"bulbul:v3" })
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    const b64 = (j.audios && j.audios[0]) || j.audio;
+    if (!b64) throw new Error("no audio in response");
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type:"audio/wav" });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url); audio.play();
+    setStatus("Spoken via Bulbul.", "ok");
+  } catch (e){
+    setStatus("Speech failed (" + e.message + "). If this is a network/CORS error, route the call through a small server-side proxy.", "err");
+  }
+}
+
+function setupSarvam(){
+  const k = document.getElementById("sarvamKey");
+  try { const saved = localStorage.getItem("sarvamKey"); if (saved) k.value = saved; } catch(e){}
+  k.addEventListener("change", () => { try{ localStorage.setItem("sarvamKey", k.value); }catch(e){} });
+  document.getElementById("btnTranslate").onclick = sarvamTranslate;
+  document.getElementById("btnSpeak").onclick = sarvamSpeak;
+}
+
+/* ---------- init ---------- */
+function init(){
+  buildLibrary();
+  buildKeyboard();
+  setupControls();
+  setupTransport();
+  renderTracks();
+  setupSarvam();
+  kbStart();
+  document.addEventListener("pointerdown", resumeAudio, { once:true });
+  window.addEventListener("resize", () => {});
+}
+init();
+</script>
+</body>
+</html>
